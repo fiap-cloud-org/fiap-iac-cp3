@@ -1,7 +1,7 @@
 # VPC
 resource "aws_vpc" "vpc10" {
   cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = "true"
+  enable_dns_hostnames = true
   tags = {
     Name = "vpc10"
   }
@@ -9,7 +9,7 @@ resource "aws_vpc" "vpc10" {
 
 resource "aws_vpc" "vpc20" {
   cidr_block           = "10.1.0.0/16"
-  enable_dns_hostnames = "true"
+  enable_dns_hostnames = true
   tags = {
     Name = "vpc20"
   }
