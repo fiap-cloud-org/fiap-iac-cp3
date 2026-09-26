@@ -1,15 +1,15 @@
 # VPC
 resource "aws_vpc" "vpc10" {
   cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = "true"
+  enable_dns_hostnames = true
   tags = {
     Name = "vpc10"
   }
 }
 
 resource "aws_vpc" "vpc20" {
-  cidr_block           = "20.0.0.0/16"
-  enable_dns_hostnames = "true"
+  cidr_block           = "10.1.0.0/16"
+  enable_dns_hostnames = true
   tags = {
     Name = "vpc20"
   }
@@ -28,7 +28,7 @@ resource "aws_subnet" "sn_vpc10_pub" {
 
 resource "aws_subnet" "sn_vpc20_priv" {
   vpc_id            = aws_vpc.vpc20.id
-  cidr_block        = "20.0.1.0/24"
+  cidr_block        = "10.1.1.0/24"
   availability_zone = "us-east-1a"
   tags = {
     Name = "sn_vpc20"
@@ -57,8 +57,8 @@ resource "aws_internet_gateway" "igw_vpc10" {
 resource "aws_route_table" "rt_sn_vpc10_pub" {
   vpc_id = aws_vpc.vpc10.id
   route {
-    cidr_block = "20.0.0.0/16"
-    gateway_id = aws_vpc_peering_connection.vpc_peering.id
+    cidr_block                = "10.1.0.0/16"
+    vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
   }
   route {
     cidr_block = "0.0.0.0/0"
@@ -72,8 +72,8 @@ resource "aws_route_table" "rt_sn_vpc10_pub" {
 resource "aws_route_table" "rt_sn_vpc20_priv" {
   vpc_id = aws_vpc.vpc20.id
   route {
-    cidr_block = "10.0.0.0/16"
-    gateway_id = aws_vpc_peering_connection.vpc_peering.id
+    cidr_block                = "10.0.0.0/16"
+    vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
   }
   tags = {
     Name = "rt_sn_vpc20_priv"
