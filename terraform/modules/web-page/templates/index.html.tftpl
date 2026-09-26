@@ -41,6 +41,7 @@
   .lead code { font: 15px var(--mono); color: var(--ink); background: var(--card); border: 1px solid var(--line);
                padding: 1px 6px; border-radius: 4px; }
   .grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px; }
+  .grid > * { min-width: 0; }
   @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px 24px; }
   .card h2 { margin: 0 0 16px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
@@ -51,10 +52,11 @@
   .pill.pub { background: var(--accent-soft); color: var(--accent); }
   .pill.priv { background: #ECEBE6; color: var(--muted); }
   .link { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; margin: 6px 0 22px; }
-  .net { border: 1.5px solid var(--ink-cloud); border-radius: 8px; padding: 12px 14px; }
+  .net { min-width: 0; overflow-wrap: anywhere; border: 1.5px solid var(--ink-cloud); border-radius: 8px; padding: 12px 14px; }
   .net.peer { border-style: dashed; }
   .net b { display: block; font-size: 15px; }
-  .net span { display: block; font: 12px/1.5 var(--mono); color: var(--muted); }
+  .net span { display: block; white-space: nowrap; font: 12px/1.5 var(--mono); color: var(--muted); }
+  @media (max-width: 760px) { .link { grid-template-columns: 1fr 44px 1fr; } .net { padding: 10px; } .wire::after { display: none; } }
   .wire { height: 2px; margin: 0 8px; position: relative;
           background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 14px);
           background-size: 14px 2px; animation: flow .8s linear infinite; }
