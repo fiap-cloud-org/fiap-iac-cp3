@@ -79,7 +79,7 @@ resource "azurerm_network_security_group" "nsgvm" {
     destination_address_prefix = "*"
   }
   security_rule {
-    name                       = "FTP"
+    name                       = "SSH"
     priority                   = 1011
     direction                  = "Inbound"
     access                     = "Allow"
