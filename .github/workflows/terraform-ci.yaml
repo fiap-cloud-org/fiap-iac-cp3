@@ -1,0 +1,40 @@
+name: Terraform CI
+
+# Roda em todo push e PR, sem nenhuma credencial de nuvem:
+# formatação, validação (sem backend) e terraform test com provider simulado.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  TERRAFORM_VERSION: 1.9.8
+
+jobs:
+  fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - run: terraform fmt -check -recursive -diff terraform
+
+  validate:
+    name: validate + test (${{ matrix.cloud }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud: [aws, azure]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - run: terraform -chdir=terraform/${{ matrix.cloud }} init -backend=false -input=false
+      - run: terraform -chdir=terraform/${{ matrix.cloud }} validate
+      - run: terraform -chdir=terraform/${{ matrix.cloud }} test
