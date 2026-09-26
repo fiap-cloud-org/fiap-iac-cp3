@@ -1,5 +1,5 @@
 <h1 align="center">
-  CP3 · Terraform multicloud com peering na AWS e na Azure
+  CP3 - Terraform multicloud com peering na AWS e na Azure
 </h1>
 
 <p align="center">
