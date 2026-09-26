@@ -20,3 +20,6 @@ terraform.rc
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Simulação local
+tests/local/.out/
