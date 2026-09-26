@@ -18,8 +18,6 @@ Checkpoint 3 da disciplina de **Infraestrutura como Código** (FIAP, outubro de 
 
 Em cada nuvem, a primeira rede tem uma máquina com IP público que serve uma página web; a segunda rede tem uma máquina **só com IP privado**, que só pode ser alcançada pelo peering. A página mostra de qual nuvem e de qual máquina veio a resposta e se o peering está funcionando, com um teste que roda dentro da própria VM.
 
-Este repositório é a versão organizada da entrega: o código foi separado por assunto, os bugs encontrados foram corrigidos, a senha fixa das VMs saiu do código e o pipeline passou a validar sem credenciais.
-
 ## Arquitetura
 
 <p align="center">
@@ -66,19 +64,19 @@ Um módulo sem recursos que gera o script de inicialização das quatro máquina
 | Página | Grava o `index.html` renderizado pelo Terraform com a nuvem, região, rede, sub-rede e IPs da máquina |
 | Teste de peering | Agenda no `cron` um `curl` de minuto em minuto no IP privado da máquina do outro lado e grava o resultado em `peer.json`, que a página lê |
 
-### Mudanças em relação à entrega
+### Decisões técnicas
 
-| O que era | O que ficou | Por quê |
+| Ponto | Como ficou | Por quê |
 |---|---|---|
-| `admin_password = "..."` fixo nas 4 VMs da Azure | `azurerm_linux_virtual_machine` com `admin_ssh_key` e senha desativada | senha no código; a chave pública vem de variável ou secret |
-| Rota do peering AWS em `gateway_id` | `vpc_peering_connection_id` | `gateway_id` é o campo de Internet/VPN Gateway |
-| `vpc20` em `20.0.0.0/16` | `10.1.0.0/16` | `20.0.0.0/16` é faixa de IP público, não privada |
-| Regra `FTP` na porta 22 do NSG | regra `SSH`, origem configurável | nome errado e SSH aberto para qualquer origem |
-| VMs, EC2 e load balancer comentados no fim | VMs e EC2 ativos com `deploy_vms` (padrão `true`); o load balancer não voltou | o pool do LB juntava VMs de VNets diferentes, o que o Azure Load Balancer não aceita; cada rede pública ganhou um acesso direto |
-| Availability set das VMs | removido | com uma VM em cada VNet e sem load balancer, o conjunto não tinha função |
-| Backend com bucket e storage account no código | backend parcial + `backend.hcl.example` | nomes da conta fora do repositório |
-| Pipeline aplicando (e destruindo, com `plan -destroy`) a cada push | CI sem credenciais + deploy manual | nenhum push mexe na nuvem |
-| `main.tf` único por nuvem | arquivos por assunto, variáveis e outputs | leitura e manutenção |
+| Acesso às VMs da Azure | `azurerm_linux_virtual_machine` com `admin_ssh_key` e senha desativada | Nenhuma senha no código; a chave pública vem de variável ou secret |
+| Rota do peering na AWS | `vpc_peering_connection_id` nas route tables | É o campo certo para o destino ser a conexão de peering |
+| Faixas de IP | `10.0.0.0/16` e `10.1.0.0/16` | Faixas privadas (RFC 1918) que não se sobrepõem |
+| SSH | Regra `SSH` com origem em `ssh_source_cidr` | A porta 22 não fica aberta para qualquer origem |
+| Máquinas opcionais | `deploy_vms` (padrão `true`) | Permite subir só as redes e o peering |
+| Sem load balancer | Cada rede pública tem acesso direto | O Azure Load Balancer não aceita, no mesmo pool, VMs de VNets diferentes |
+| Backend | Configuração parcial com `backend.hcl.example` | Bucket e storage account ficam fora do repositório |
+| Pipeline | CI sem credenciais e deploy manual | Nenhum push mexe na nuvem |
+| Organização | Arquivos por assunto (rede, peering, segurança, máquinas), variáveis e outputs | Leitura e manutenção |
 
 ### Pipeline
 
