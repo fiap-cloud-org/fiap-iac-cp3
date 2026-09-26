@@ -1,0 +1,6 @@
+# Copie para backend.hcl (fica fora do git) e troque pelos seus recursos.
+# A storage account e o container precisam existir antes do terraform init.
+resource_group_name  = "<rg-do-tfstate>"
+storage_account_name = "<storageaccountdotfstate>"
+container_name       = "tfstate"
+key                  = "fiap-iac-cp3/azure/terraform.tfstate"
