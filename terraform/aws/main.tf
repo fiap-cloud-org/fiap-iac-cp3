@@ -57,8 +57,8 @@ resource "aws_internet_gateway" "igw_vpc10" {
 resource "aws_route_table" "rt_sn_vpc10_pub" {
   vpc_id = aws_vpc.vpc10.id
   route {
-    cidr_block = "20.0.0.0/16"
-    gateway_id = aws_vpc_peering_connection.vpc_peering.id
+    cidr_block                = "20.0.0.0/16"
+    vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
   }
   route {
     cidr_block = "0.0.0.0/0"
@@ -72,8 +72,8 @@ resource "aws_route_table" "rt_sn_vpc10_pub" {
 resource "aws_route_table" "rt_sn_vpc20_priv" {
   vpc_id = aws_vpc.vpc20.id
   route {
-    cidr_block = "10.0.0.0/16"
-    gateway_id = aws_vpc_peering_connection.vpc_peering.id
+    cidr_block                = "10.0.0.0/16"
+    vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
   }
   tags = {
     Name = "rt_sn_vpc20_priv"
