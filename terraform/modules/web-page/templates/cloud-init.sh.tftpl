@@ -1,0 +1,56 @@
+#!/bin/bash
+# Inicialização da ${vm_name}: servidor web, página do CP3 e teste de peering.
+set -u
+
+WEB=/var/www/html
+mkdir -p "$WEB"
+
+# 1. Servidor web. Com internet, instala o Apache. Sem internet (sub-rede
+#    privada da AWS, sem NAT), usa o python3 que já vem na imagem Ubuntu.
+if timeout 180 apt-get -o Acquire::Retries=0 -o Acquire::http::Timeout=15 update -qq \
+  && DEBIAN_FRONTEND=noninteractive timeout 300 apt-get install -y -qq apache2; then
+  rm -f "$WEB/index.html"
+  systemctl enable --now apache2 2>/dev/null || apachectl start
+  SERVER=apache2
+else
+  cat > /etc/systemd/system/cp3-site.service <<'UNIT'
+[Unit]
+Description=Pagina do fiap-iac-cp3 (python3 http.server)
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 -m http.server 80 --directory /var/www/html
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+  systemctl daemon-reload 2>/dev/null && systemctl enable --now cp3-site.service 2>/dev/null \
+    || (cd "$WEB" && nohup python3 -m http.server 80 >/var/log/cp3-site.log 2>&1 &)
+  SERVER=python3
+fi
+
+# 2. Página (renderizada pelo Terraform e enviada em base64).
+base64 -d > "$WEB/index.html" <<'PAGE'
+${index_b64}
+PAGE
+
+# 3. Teste de peering: a cada minuto, chama a máquina do outro lado pelo IP
+#    privado e grava o resultado em peer.json, que a página lê.
+cat > /usr/local/bin/cp3-peer-check <<'CHECK'
+#!/bin/bash
+OUT=/var/www/html/peer.json
+RES=$(curl -s -o /dev/null -m 4 -w '%%{http_code} %%{time_total}' "http://${peer_ip}/" 2>/dev/null)
+CODE=$(echo "$RES" | cut -d' ' -f1)
+SECS=$(echo "$RES" | cut -d' ' -f2)
+MS=$(awk -v s="$SECS" 'BEGIN { printf "%d", s * 1000 }')
+if [ "$CODE" = "200" ]; then OK=true; else OK=false; MS=null; fi
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+printf '{"peer":"%s","ip":"%s","ok":%s,"http":"%s","ms":%s,"checked_at":"%s"}\n' \
+  "${peer_name}" "${peer_ip}" "$OK" "$CODE" "$MS" "$NOW" > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+CHECK
+chmod +x /usr/local/bin/cp3-peer-check
+echo "* * * * * root /usr/local/bin/cp3-peer-check" > /etc/cron.d/cp3-peer-check
+/usr/local/bin/cp3-peer-check
+
+echo "cp3: ${vm_name} pronta (servidor: $SERVER)"
