@@ -1,7 +1,8 @@
 name: Terraform CI
 
 # Roda em todo push e PR, sem nenhuma credencial de nuvem:
-# formatação, validação (sem backend) e terraform test com provider simulado.
+# formatação, validação (sem backend), terraform test com provider simulado
+# e a simulação das VMs com Docker.
 on:
   push:
   pull_request:
@@ -21,7 +22,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
-      - run: terraform fmt -check -recursive -diff terraform
+      - run: terraform fmt -check -recursive -diff
 
   validate:
     name: validate + test (${{ matrix.cloud }})
@@ -38,3 +39,12 @@ jobs:
       - run: terraform -chdir=terraform/${{ matrix.cloud }} init -backend=false -input=false
       - run: terraform -chdir=terraform/${{ matrix.cloud }} validate
       - run: terraform -chdir=terraform/${{ matrix.cloud }} test
+
+  simulacao:
+    name: simulação das VMs (Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: tests/local/simular.sh
+      - if: always()
+        run: tests/local/simular.sh down
