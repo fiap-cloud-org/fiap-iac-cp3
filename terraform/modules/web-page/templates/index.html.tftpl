@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${vm_name} · ${cloud} · fiap-iac-cp3</title>
+<style>
+  :root {
+%{ if cloud == "AWS" ~}
+    --accent: #D97706;
+    --accent-soft: #FEF3E2;
+    --ink-cloud: #232F3E;
+%{ else ~}
+    --accent: #0A66C2;
+    --accent-soft: #E7F0FA;
+    --ink-cloud: #0B2545;
+%{ endif ~}
+    --bg: #F4F3EF;
+    --card: #FFFFFF;
+    --ink: #1C1C1A;
+    --muted: #6B6A64;
+    --line: #E2E0D8;
+    --ok: #1F7A4D;
+    --ok-soft: #E4F2EA;
+    --bad: #B42318;
+    --bad-soft: #FBEAE8;
+    --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Ubuntu Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Ubuntu, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--sans); }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 48px; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+         font: 13px/1 var(--mono); color: var(--muted); letter-spacing: .02em; }
+  .tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px;
+         background: var(--ink-cloud); color: #fff; }
+  .tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+  h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -.02em; margin: 44px 0 10px; font-weight: 700; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lead { color: var(--muted); font-size: 18px; margin: 0 0 36px; max-width: 640px; }
+  .lead code { font: 15px var(--mono); color: var(--ink); background: var(--card); border: 1px solid var(--line);
+               padding: 1px 6px; border-radius: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px; }
+  .grid > * { min-width: 0; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px 24px; }
+  .card h2 { margin: 0 0 16px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; }
+  dt { color: var(--muted); font-size: 14px; }
+  dd { margin: 0; font: 14px/1.45 var(--mono); word-break: break-all; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font: 12px/1.6 var(--mono); }
+  .pill.pub { background: var(--accent-soft); color: var(--accent); }
+  .pill.priv { background: #ECEBE6; color: var(--muted); }
+  .link { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; margin: 6px 0 22px; }
+  .net { min-width: 0; overflow-wrap: anywhere; border: 1.5px solid var(--ink-cloud); border-radius: 8px; padding: 12px 14px; }
+  .net.peer { border-style: dashed; }
+  .net b { display: block; font-size: 15px; }
+  .net span { display: block; white-space: nowrap; font: 12px/1.5 var(--mono); color: var(--muted); }
+  @media (max-width: 760px) { .link { grid-template-columns: 1fr 44px 1fr; } .net { padding: 10px; } .wire::after { display: none; } }
+  .wire { height: 2px; margin: 0 8px; position: relative;
+          background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 14px);
+          background-size: 14px 2px; animation: flow .8s linear infinite; }
+  .wire.down { background: repeating-linear-gradient(90deg, var(--bad) 0 8px, transparent 8px 14px); animation: none; opacity: .6; }
+  .wire::after { content: "peering"; position: absolute; left: 50%; top: -24px; transform: translateX(-50%);
+                 font: 11px var(--mono); color: var(--muted); }
+  @keyframes flow { to { background-position: 14px 0; } }
+  @media (prefers-reduced-motion: reduce) { .wire { animation: none; } }
+  .status { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 8px; background: #F1F0EC; }
+  .status .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .status.ok { background: var(--ok-soft); } .status.ok .dot { background: var(--ok); }
+  .status.bad { background: var(--bad-soft); } .status.bad .dot { background: var(--bad); }
+  .status b { font-size: 15px; }
+  .status small { display: block; color: var(--muted); font: 12px/1.5 var(--mono); }
+  .note { margin: 14px 0 0; font-size: 14px; color: var(--muted); }
+  footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); display: flex;
+           justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--muted); }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span>FIAP · Infraestrutura como Código · Checkpoint 3</span>
+    <span class="tag"><i></i>${cloud} · ${region}</span>
+  </div>
+
+  <h1>Esta página veio da <em>${cloud}</em>.</h1>
+  <p class="lead">Quem respondeu foi <code>${vm_name}</code>, criada pelo Terraform dentro da rede
+    <code>${network_name}</code>, que tem peering com <code>${peer_network_name}</code>.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Esta máquina</h2>
+      <dl>
+        <dt>Nuvem</dt><dd>${cloud}</dd>
+        <dt>Região</dt><dd>${region}</dd>
+        <dt>Máquina</dt><dd>${vm_name}</dd>
+        <dt>Rede</dt><dd>${network_name} · ${network_cidr}</dd>
+        <dt>Sub-rede</dt><dd>${subnet_name}</dd>
+        <dt>IP privado</dt><dd>${private_ip}</dd>
+%{ if public ~}
+        <dt>Acesso</dt><dd><span class="pill pub">IP público · porta 80</span></dd>
+%{ else ~}
+        <dt>Acesso</dt><dd><span class="pill priv">só IP privado · via peering</span></dd>
+%{ endif ~}
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2>Peering</h2>
+      <div class="link">
+        <div class="net"><b>${network_name}</b><span>${network_cidr}</span></div>
+        <div class="wire" id="wire"></div>
+        <div class="net peer"><b>${peer_network_name}</b><span>${peer_network_cidr}</span></div>
+      </div>
+      <div class="status" id="status">
+        <span class="dot"></span>
+        <div><b id="status-title">Aguardando o primeiro teste</b>
+          <small id="status-detail">${vm_name} chama ${peer_name} (${peer_ip}) a cada minuto</small></div>
+      </div>
+      <p class="note">O teste roda dentro da máquina: um <code>curl</code> no IP privado de
+        ${peer_name}, que só responde se as rotas e o peering estiverem certos.</p>
+    </section>
+  </div>
+
+  <footer>
+    <span>Provisionado com Terraform · fiap-iac-cp3</span>
+    <span>William Coelho · <a href="https://github.com/willtechdev">@willtechdev</a></span>
+  </footer>
+</div>
+<script>
+  (function () {
+    var box = document.getElementById("status");
+    var title = document.getElementById("status-title");
+    var detail = document.getElementById("status-detail");
+    var wire = document.getElementById("wire");
+    function show(r) {
+      var hora = new Date(r.checked_at).toLocaleTimeString("pt-BR");
+      if (r.ok) {
+        box.className = "status ok";
+        wire.className = "wire";
+        title.textContent = r.peer + " respondeu pelo peering";
+        detail.textContent = "HTTP " + r.http + " em " + r.ms + " ms · " + r.ip + " · " + hora;
+      } else {
+        box.className = "status bad";
+        wire.className = "wire down";
+        title.textContent = r.peer + " não respondeu";
+        detail.textContent = "sem resposta de " + r.ip + " · " + hora;
+      }
+    }
+    function check() {
+      fetch("peer.json", { cache: "no-store" })
+        .then(function (res) { if (!res.ok) throw new Error(); return res.json(); })
+        .then(show)
+        .catch(function () {});
+    }
+    check();
+    setInterval(check, 15000);
+  })();
+</script>
+</body>
+</html>

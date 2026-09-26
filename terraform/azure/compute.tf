@@ -1,16 +1,43 @@
 locals {
   vms = var.deploy_vms ? {
     vm01 = {
-      subnet_id  = azurerm_subnet.subnet1a_vnet10.id
-      private_ip = cidrhost(var.vnet10_subnet_cidr, 10)
-      public     = true
+      subnet_id    = azurerm_subnet.subnet1a_vnet10.id
+      subnet_name  = azurerm_subnet.subnet1a_vnet10.name
+      network_name = azurerm_virtual_network.vnet10.name
+      network_cidr = var.vnet10_cidr
+      private_ip   = cidrhost(var.vnet10_subnet_cidr, 10)
+      public       = true
+      peer         = "vm02"
     }
     vm02 = {
-      subnet_id  = azurerm_subnet.subnet1c_vnet20.id
-      private_ip = cidrhost(var.vnet20_subnet_cidr, 10)
-      public     = false
+      subnet_id    = azurerm_subnet.subnet1c_vnet20.id
+      subnet_name  = azurerm_subnet.subnet1c_vnet20.name
+      network_name = azurerm_virtual_network.vnet20.name
+      network_cidr = var.vnet20_cidr
+      private_ip   = cidrhost(var.vnet20_subnet_cidr, 10)
+      public       = false
+      peer         = "vm01"
     }
   } : {}
+}
+
+# Página e teste de peering de cada VM (mesmo módulo usado na AWS).
+module "web_page" {
+  source   = "../modules/web-page"
+  for_each = local.vms
+
+  cloud             = "Azure"
+  region            = var.location
+  vm_name           = each.key
+  network_name      = each.value.network_name
+  network_cidr      = each.value.network_cidr
+  subnet_name       = each.value.subnet_name
+  private_ip        = each.value.private_ip
+  public            = each.value.public
+  peer_name         = each.value.peer
+  peer_ip           = local.vms[each.value.peer].private_ip
+  peer_network_name = local.vms[each.value.peer].network_name
+  peer_network_cidr = local.vms[each.value.peer].network_cidr
 }
 
 # Só a vm01 tem IP público. A vm02 é alcançada pela vm01 através do peering.
@@ -69,11 +96,5 @@ resource "azurerm_linux_virtual_machine" "vm" {
     storage_account_type = "Standard_LRS"
   }
 
-  custom_data = base64encode(<<-CUSTOM_DATA
-    #!/bin/bash
-    apt-get update
-    apt-get install -y apache2
-    echo "fiap-iac-cp3 - Azure - ${each.key}" > /var/www/html/index.html
-  CUSTOM_DATA
-  )
+  custom_data = base64encode(module.web_page[each.key].user_data)
 }
